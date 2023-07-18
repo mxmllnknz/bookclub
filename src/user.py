@@ -1,5 +1,6 @@
 import db
 from book import Book, getBookById
+from user_book import User_Book_Status
 class User:
     def __init__(self, name: str):
         self.id = 0
@@ -21,15 +22,15 @@ class User:
         cursor.connection.commit()
         cursor.connection.close()
         
-    def getUserReadingTitles(self) -> list[Book]:
+    def getUserReadingTitles(self) -> list[str]:
         cursor = db.get_cursor()
-        cursor.execute(f"SELECT * FROM user_books where \
-                        user_id = {self.id} AND reading = true")
+        cursor.execute(f"SELECT * FROM user_books WHERE \
+                        user_id = {self.id} AND status = '{User_Book_Status.READING.value}'")
         books = cursor.fetchall()
         reading = []
         for bookTup in books:
-            book = getBookById(bookTup[0])
+            book = getBookById(bookTup[3])
             if book:
-                reading.append(book)
+                reading.append(book.title + " by " + book.author)
         return reading
     

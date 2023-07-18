@@ -4,6 +4,7 @@ from discord.ext import commands
 from os import getenv
 from user import User
 from book import Book
+from user_book import User_Book, User_Book_Status
 import requests
 import db
 
@@ -23,11 +24,29 @@ async def reading(ctx, user=""):
     if not titles:
         await ctx.send(f'{reader.formatted_name} isn\'t reading any books at the moment.')
     else:
-        await ctx.send(f'{reader.formatted_name} is reading {titles}')
+        # Use a numbered list 
+        await ctx.send(f'{reader.formatted_name} is reading {", ".join(titles)}')
     
 @bot.command(name='set', help='Update the reading status of a book in your reading/read list')
-async def setBookStatus(ctx, status):
-    #TODO: Complete this function
+async def setBookStatus(ctx, title, status):
+    r = requests.get(url = f'https://www.googleapis.com/books/v1/volumes?q={title}')
+ 
+    # extracting data in json format
+    data = r.json()
+    #print(data['items'][0])
+    result = data['items'][0]['volumeInfo']
+    book = Book(result["title"], result["pageCount"], result["authors"][0], result["publishedDate"][0:4], result["publisher"], api_id=data['items'][0]['id'])
+    user = User(name=ctx.message.author)
+    
+    formatted_status = status.lower().strip()
+    if formatted_status == User_Book_Status.WANT_TO_READ.value or formatted_status == User_Book_Status.READING.value or formatted_status == User_Book_Status.READ.value:
+        user_book=User_Book(user_id=user.id, book_id=book.id)
+        user_book.update(formatted_status)
+        await ctx.send(f'Set \"{book.title}\" to {formatted_status.upper()} for {user.formatted_name}')
+    else:
+        await ctx.send(f'{formatted_status} is not a valid status. Please enter either "want to read", "reading", or "read".')
+    
+    
     return None
 
 @bot.command(name='pages', help='Ask the bot how many pages you\'ve read in total')
