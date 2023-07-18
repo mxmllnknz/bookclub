@@ -26,5 +26,9 @@ class Book:
         return f'{self.title} by {self.author}, published in {self.year} by {self.publisher}, {self.num_pages} pages'
     
 def getBookById(id: int) -> Optional[Book]:
-    #TODO: Complete this function
-    return None
+    cursor = db.get_cursor()
+    cursor.execute(f"SELECT * FROM books WHERE \
+                        id = {id}")
+    book = cursor.fetchone()
+    cursor.connection.close()
+    return Book(book[2], book[4], book[3], book[6], publisher=book[5], api_id=book[7])

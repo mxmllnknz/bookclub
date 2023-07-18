@@ -30,10 +30,10 @@ def init_db():
                     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                     user_id INTEGER, \
                     book_id INTEGER, \
-                    read BOOLEAN DEFAULT false, \
-                    reading BOOLEAN DEFAULT false, \
+                    status TEXT NOT NULL, \
                     FOREIGN KEY(user_id) REFERENCES users(id), \
-                    FOREIGN KEY(book_id) REFERENCES books(id)) \
+                    FOREIGN KEY(book_id) REFERENCES books(id), \
+                    UNIQUE(user_id, book_id) ON CONFLICT IGNORE) \
                     ")
 
     conn.commit()
