@@ -1,10 +1,8 @@
-
-from database import BaseModel
-from peewee import DateTimeField, TextField
+from peewee import DateTimeField, TextField, Model
 from typing import Tuple
 import datetime
 
-class User(BaseModel):
+class User(Model):
     created_at = DateTimeField(null=False, default=datetime.datetime.now())
     updated_at = DateTimeField(null=False, default=datetime.datetime.now())
     deleted_at = DateTimeField(null=True)
