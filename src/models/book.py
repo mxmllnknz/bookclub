@@ -1,9 +1,8 @@
 from typing import Tuple
-from database import BaseModel
-from peewee import DateTimeField, CharField, IntegerField
+from peewee import DateTimeField, CharField, IntegerField, Model
 import datetime
 
-class Book(BaseModel):
+class Book(Model):
     created_at = DateTimeField(null=False, default=datetime.datetime.now())
     updated_at = DateTimeField(null=False, default=datetime.datetime.now())
     deleted_at = DateTimeField(null=True)
@@ -11,7 +10,7 @@ class Book(BaseModel):
     num_pages = CharField(null=False)
     author = CharField(null=False)
     year = IntegerField(null=False)
-    api_id = CharField(null=True)
+    api_id = CharField(null=True, unique=True)
     publisher = CharField(null=True)
         
     def __repr__(self) -> str:
@@ -23,7 +22,7 @@ def createOrGetBook(title: str, author: str, year: str, num_pages: str, **kwargs
     return Book.get_or_create(
         title = title, 
         author = author,
-        year = year,
+        year = int(year),
         num_pages = num_pages,
         api_id = api_id,
         publisher = publisher
