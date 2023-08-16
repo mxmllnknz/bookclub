@@ -1,10 +1,13 @@
-from dotenv import load_dotenv
 import discord
 from discord.ext import commands
+
+from dotenv import load_dotenv
 from os import getenv
 
 import requests
+
 from database import util as database
+from utils import utils
 
 from models import user as u
 from models import book as b
@@ -17,6 +20,17 @@ bot = commands.Bot(command_prefix='$',intents=intents)
 
 @bot.command(name='reading', help='Ask the bot what a user is currently reading')
 async def reading(ctx, username=""):
+    """
+    The `reading` function retrieves the current reading titles of a user and sends a message indicating
+    the books they are currently reading.
+    
+    :param ctx: The `ctx` parameter is an object that represents the context of the command being
+    executed. It contains information about the message, the author, the server, and other relevant
+    details
+    :param username: The `username` parameter is an optional parameter that represents the username of
+    the user whose reading list we want to retrieve. If no `username` is provided, it defaults to the
+    author of the message (`ctx.message.author`)
+    """
     if not username:
         username = ctx.message.author
         
@@ -26,11 +40,21 @@ async def reading(ctx, username=""):
     if not titles:
         await ctx.send(f'{reader.formatted_name} isn\'t reading any books at the moment.')
     else:
-        # TODO: Use a numbered list 
-        await ctx.send(f'{reader.formatted_name} is reading {", ".join(titles)}')
+        await ctx.send(f'{reader.formatted_name} is reading:\n{utils.numberedStrIterable(titles)}')
     
 @bot.command(name='set', help='Update the reading status of a book in your reading/read list')
 async def setBookStatus(ctx, title, status):
+    """
+    The function `setBookStatus` retrieves book information from the Google Books API, creates or
+    retrieves a book and user in the database, and updates the status of the user's book.
+    
+    :param ctx: The `ctx` parameter is the context object, which contains information about the current
+    invocation of the command. It includes attributes such as the message that triggered the command,
+    the channel it was sent in, the author of the message, etc
+    :param title: The `title` parameter is the title of the book that you want to set the status for
+    :param status: The `status` parameter in the `setBookStatus` function is used to specify the status
+    of a book for a user. It can have one of the following values: `want to read`, `reading`, `read`
+    """
     r = requests.get(url = f'https://www.googleapis.com/books/v1/volumes?q={title}')
  
     data = r.json()
@@ -45,19 +69,39 @@ async def setBookStatus(ctx, title, status):
         await ctx.send(f'Set \"{book.title}\" to {formatted_status.upper()} for {user.formatted_name}')
     else:
         await ctx.send(f'{formatted_status} is not a valid status. Please enter either "want to read", "reading", or "read".')
-    
-    
-    return None
 
 @bot.command(name='pages', help='Ask the bot how many pages you\'ve read in total')
 async def pages(ctx, username=""):
+    """
+    The `pages` function retrieves the number of pages read by a user and sends a message with the
+    user's formatted name and the number of pages read.
+    
+    :param ctx: The `ctx` parameter is an object that represents the context of the command being
+    executed. It contains information about the message, the channel, the server, and the user who
+    triggered the command
+    :param username: The `username` parameter is an optional parameter that allows you to specify a
+    specific username. If no username is provided, it defaults to the author of the message
+    (`ctx.message.author`)
+    """
     if not username:
         username = ctx.message.author
     user, _ = u.createOrGetUser(username)
-    return ub.getPagesRead(user)
+    await ctx.send(f'{user.formatted_name} has read {ub.getPagesRead(user)} pages')
 
 @bot.command(name='search')
 async def search(ctx, name):
+    """
+    The `search` function takes a name as input, makes a request to the Google Books API to search for
+    books with that name, retrieves the information of the first book in the search results, creates or
+    gets a book object using that information, and sends a message with the book details and description
+    (limited to 2000 characters) to the specified context.
+    
+    :param ctx: ctx is the context object, which contains information about the current state of the bot
+    and the message that triggered the command. It includes attributes such as the message content, the
+    channel the message was sent in, the author of the message, etc
+    :param name: The `name` parameter is the name of the book that you want to search for. It is used to
+    make a request to the Google Books API to retrieve information about the book
+    """
     r = requests.get(url = f'https://www.googleapis.com/books/v1/volumes?q={name}')
  
     data = r.json()
