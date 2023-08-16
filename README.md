@@ -1,5 +1,6 @@
 # bookclub
 bookclub is a public Discord bot developed to mimic the functionality of reading tracker applications like GoodReads inside a server.
+<img width="568" alt="Screenshot 2023-08-16 at 3 36 52 PM" src="https://github.com/mxmllnknz/bookclub/assets/43051599/a82bfab7-72ad-48d9-8521-a920b26e3f02">
 
 # How to use it
 Once bookclub is installed on your Discord server, you can make commands in any text channel by beginning your message with a dollar sign ($).
