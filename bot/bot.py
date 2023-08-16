@@ -2,11 +2,13 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 from os import getenv
-from models.user import User, createOrGetUser
-from models.book import Book, createOrGetBook
-from models.user_book import User_Book, User_Book_Status, getCurrentReadingTitles, createOrGetUserBook
+
 import requests
-import database
+from database import util as database
+
+from models import user as u
+from models import book as b
+from models import user_book as ub
 
 load_dotenv()
 
@@ -14,13 +16,13 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='$',intents=intents)
 
 @bot.command(name='reading', help='Ask the bot what a user is currently reading')
-async def reading(ctx, user=""):
-    if not user:
-        user = ctx.message.author
+async def reading(ctx, username=""):
+    if not username:
+        username = ctx.message.author
         
-    reader, _ = createOrGetUser(user)
+    reader, _ = u.createOrGetUser(username)
     
-    titles = getCurrentReadingTitles(reader)
+    titles = ub.getCurrentReadingTitles(reader)
     if not titles:
         await ctx.send(f'{reader.formatted_name} isn\'t reading any books at the moment.')
     else:
@@ -33,13 +35,13 @@ async def setBookStatus(ctx, title, status):
  
     data = r.json()
     result = data['items'][0]['volumeInfo']
-    book, _ = createOrGetBook(title=result["title"], num_pages=result["pageCount"], author=result["authors"][0], year=result["publishedDate"][0:4], publisher=result["publisher"], api_id=data['items'][0]['id'])
-    user, _ = createOrGetUser(name=ctx.message.author)
+    book, _ = b.createOrGetBook(title=result["title"], num_pages=result["pageCount"], author=result["authors"][0], year=result["publishedDate"][0:4], publisher=result["publisher"], api_id=data['items'][0]['id'])
+    user, _ = u.createOrGetUser(name=ctx.message.author)
     
     formatted_status = status.lower().strip()
-    if formatted_status == User_Book_Status.WANT_TO_READ.value or formatted_status == User_Book_Status.READING.value or formatted_status == User_Book_Status.READ.value:
-        createOrGetUserBook(user=user, book=book)
-        User_Book.update(status=formatted_status).where((User_Book.user == user) and (User_Book.book == book)).execute()
+    if formatted_status == ub.User_Book_Status.WANT_TO_READ.value or formatted_status == ub.User_Book_Status.READING.value or formatted_status == ub.User_Book_Status.READ.value:
+        ub.createOrGetUserBook(user=user, book=book)
+        ub.User_Book.update(status=formatted_status).where((ub.User_Book.user == user) and (ub.User_Book.book == book)).execute()
         await ctx.send(f'Set \"{book.title}\" to {formatted_status.upper()} for {user.formatted_name}')
     else:
         await ctx.send(f'{formatted_status} is not a valid status. Please enter either "want to read", "reading", or "read".')
@@ -48,9 +50,11 @@ async def setBookStatus(ctx, title, status):
     return None
 
 @bot.command(name='pages', help='Ask the bot how many pages you\'ve read in total')
-async def pages(ctx):
-    # TODO: Write this function
-    return None
+async def pages(ctx, username=""):
+    if not username:
+        username = ctx.message.author
+    user, _ = u.createOrGetUser(username)
+    return ub.getPagesRead(user)
 
 @bot.command(name='search')
 async def search(ctx, name):
@@ -58,7 +62,7 @@ async def search(ctx, name):
  
     data = r.json()
     result = data['items'][0]['volumeInfo']
-    book, _ = createOrGetBook(title=result["title"], num_pages=result["pageCount"], author=result["authors"][0], year=result["publishedDate"][0:4], publisher=result["publisher"], api_id=data['items'][0]['id'])
+    book, _ = b.createOrGetBook(title=result["title"], num_pages=result["pageCount"], author=result["authors"][0], year=result["publishedDate"][0:4], publisher=result["publisher"], api_id=data['items'][0]['id'])
     message = f'{repr(book)}\n\n{result["description"]}'[:2000]
     if len(f'{repr(book)}\n\n{result["description"]}') > 2000:
         message = f'{repr(book)}\n\n{result["description"]}'[:1997] + '...'
@@ -80,7 +84,6 @@ async def ping(ctx):
 if __name__ == "__main__":
     token = getenv('DISCORD_TOKEN')
     db = database.get_db()
-    db.create_tables([User, Book, User_Book])
     if token:
         bot.run(token=token)
     

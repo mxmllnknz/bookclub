@@ -1,7 +1,10 @@
-from peewee import SqliteDatabase, Model
-from .models import User, Book, User_Book
+from peewee import SqliteDatabase
+from models import user as u
+from models import book as b
+from models import user_book as ub
 
-MODELS = [User, Book, User_Book]
+
+MODELS = [u.User, b.Book, ub.User_Book]
 
 def get_db(db_name='club.db') -> SqliteDatabase:
   db = SqliteDatabase(f'{db_name}')
